@@ -2,6 +2,7 @@
     'use strict';
 
     var SESSION_KEY = 'lead_assistant_session_token_v1';
+    var memorySessionToken = '';
 
     document.addEventListener('submit', function (event) {
         var chatForm = event.target.closest('[data-lead-assistant-form]');
@@ -201,21 +202,25 @@
 
     function getSessionToken() {
         try {
-            return window.sessionStorage.getItem(SESSION_KEY) || '';
+            return window.sessionStorage.getItem(SESSION_KEY) || memorySessionToken;
         } catch (error) {
-            return '';
+            return memorySessionToken;
         }
     }
 
     function setSessionToken(token) {
+        memorySessionToken = token;
+
         try {
             window.sessionStorage.setItem(SESSION_KEY, token);
         } catch (error) {
-            // The conversation still works for the current request if storage is unavailable.
+            // The in-memory fallback keeps this tab functional.
         }
     }
 
     function clearSessionToken() {
+        memorySessionToken = '';
+
         try {
             window.sessionStorage.removeItem(SESSION_KEY);
         } catch (error) {
