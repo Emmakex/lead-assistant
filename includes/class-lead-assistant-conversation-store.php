@@ -226,11 +226,22 @@ final class Lead_Assistant_Conversation_Store {
     }
 
     public static function needs_contact_capture( int $lead_id, string $scope ): bool {
-        if ( $scope !== Lead_Assistant_Conversation_Governor::CONVERSION_READY ) {
+        global $wpdb;
+
+        if ( $lead_id < 1 || self::is_contact_captured( $lead_id ) ) {
             return false;
         }
 
-        return ! self::is_contact_captured( $lead_id );
+        $table  = $wpdb->prefix . 'lead_assistant_leads';
+        $status = (string) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT status FROM {$table} WHERE id = %d LIMIT 1",
+                $lead_id
+            )
+        );
+
+        return $status === 'qualified'
+            || $scope === Lead_Assistant_Conversation_Governor::CONVERSION_READY;
     }
 
     public static function is_contact_captured( int $lead_id ): bool {
