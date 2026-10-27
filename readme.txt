@@ -4,7 +4,7 @@ Tags: ai chatbot, lead generation, lead capture, sales assistant, chatbot
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,13 @@ This repository is currently in development and is not yet a production release.
 6. Add `[lead_assistant]` to a page.
 
 == Changelog ==
+
+= 0.3.0 =
+* Moved conversation history authority from the browser to WordPress.
+* Added opaque random session tokens with only SHA-256 hashes stored in the database.
+* Added server-side loading of valid conversation context.
+* Kept off-topic turns stored but excluded from future model context.
+* Added session continuity across page reloads within the browser tab.
 
 = 0.2.0 =
 * Added governed OpenAI Responses API runtime.
