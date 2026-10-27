@@ -32,11 +32,11 @@ The Governor must redirect off-topic requests to the last valid business topic i
 
 The normal administrator should only need to provide:
 
-1. What the business does.
-2. What the assistant should achieve.
-3. Which lead fields are required.
+1. An AI connection.
+2. What the business does.
+3. What the assistant should achieve.
 
-Prompt engineering is an implementation detail and must not be required for standard setup.
+Prompt engineering, model selection and credential plumbing are implementation details and must not be required for standard setup.
 
 ### Actions
 
@@ -58,12 +58,39 @@ Presets configure a vertical without changing core authority. Examples may inclu
 - Requests to reveal or override hidden policy do not supersede the Governor.
 - Personal contact details are collected by application UI, not by the model.
 
+## AI credential authority
+
+`Lead_Assistant_Credential_Store` is the sole authority for obtaining a runtime API key.
+
+Credential precedence is:
+
+1. `LEAD_ASSISTANT_OPENAI_API_KEY` from `wp-config.php`;
+2. `LEAD_ASSISTANT_OPENAI_API_KEY` from the server environment;
+3. an encrypted WordPress-stored credential;
+4. no credential.
+
+Server configuration is an advanced override and always takes precedence over a stored WordPress credential.
+
+The standard WordPress connection flow is application-owned:
+
+1. an administrator submits a key through `admin-post.php` with a WordPress nonce;
+2. the key is validated server-side through the provider Models API;
+3. the currently configured model must appear in the models available to that credential;
+4. only after successful validation is the key encrypted and persisted;
+5. the plaintext value is never pre-filled or returned to the browser.
+
+The WordPress-stored credential is encrypted with either libsodium secretbox or AES-256-GCM, depending on server support. Encryption material is derived from WordPress authentication salts plus a plugin-specific context. If the site salts change, a previously stored credential may become unreadable and the administrator must reconnect it.
+
+The encrypted option name is private to the credential-store class. CI guards prevent credential identifiers from entering `public/` browser code or the encrypted option being accessed directly elsewhere.
+
+This protects the credential at rest against a database-only disclosure. It is not intended to protect against an attacker who has both the WordPress database and the site's server secrets/configuration.
+
 ## Governed AI runtime
 
 The AI provider uses the OpenAI Responses API with Structured Outputs. The application supplies the conversation policy as authoritative instructions and requires a strict response object containing:
 
-- `scope`: one of the five Governor states.
-- `reply`: concise answer or redirection without a commercial qualification question.
+- `scope`: one of the five Governor states;
+- `reply`: concise answer or redirection without a commercial qualification question;
 - `follow_up_question`: an empty string or one short relevant question.
 
 The application, not the model, decides what context survives between turns. `OFF_TOPIC` exchanges are stored for history/audit but are excluded from subsequent model context, preserving the last valid business thread.
@@ -90,7 +117,7 @@ Sequential database IDs are never exposed as public authorization.
 
 Lead capture is application-owned and only attaches to an existing server-owned conversation session.
 
-The default 0.4.0 flow is:
+The flow is:
 
 1. a governed turn returns `CONVERSION_READY`;
 2. WordPress persists the lead state as `qualified`;
@@ -111,18 +138,14 @@ The contact form links to the WordPress privacy-policy page when configured. Thi
 
 The foundation uses two tables:
 
-- `wp_lead_assistant_leads`: lead/session-level state.
+- `wp_lead_assistant_leads`: lead/session-level state;
 - `wp_lead_assistant_messages`: ordered conversation items.
 
 The `public_token` column stores only the hash of the browser-visible session token. `business_context` snapshots the configured business/goal at session creation; `lead_context` stores application-owned conversation state such as the latest Governor scope.
 
 Lead rows also store contact fields and explicit privacy-consent state/timestamp after capture. Schema changes are applied through versioned `dbDelta` migration so plugin updates do not depend on deactivate/reactivate cycles.
 
-## AI integration direction
-
-The product uses the current OpenAI Responses API rather than inheriting SmartFinance's legacy Chat Completions integration. Conversation orchestration remains application-owned so Lead Assistant can preserve only the context it actually needs.
-
-During development, the API key is read server-side from `LEAD_ASSISTANT_OPENAI_API_KEY` in `wp-config.php` or the server environment. It is never emitted to the browser.
+The AI credential is not stored in either lead table. The WordPress credential option contains only an authenticated encrypted payload.
 
 ## Public runtime boundary
 
@@ -145,6 +168,9 @@ Additional anti-abuse controls may be added before public release, but none may 
 - Escape output and sanitize stored input.
 - Never render model HTML directly.
 - Keep API credentials server-side.
+- Never pre-fill a stored API credential into HTML.
+- Encrypt WordPress-stored credentials before persistence.
+- Keep credential access centralized in the credential-store authority.
 - Rate-limit public AI and capture endpoints.
 - Bound message length and retained history.
 - Keep prior conversation context server-owned.
