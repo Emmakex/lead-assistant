@@ -73,6 +73,25 @@ Leads can be searched by name, email or phone and filtered by status and WordPre
 
 The screen is restricted to users with `manage_options`. It still does not provide CRM actions, deletion or contact-status workflows.
 
+## Release candidate packaging
+
+The installable ZIP is built from an explicit allowlist instead of copying the repository wholesale. Only runtime distribution files are packaged:
+
+- `lead-assistant.php`
+- `readme.txt`
+- `includes/`
+- `admin/`
+- `public/`
+
+Run locally with:
+
+```bash
+bash scripts/build-release.sh
+bash scripts/smoke-release.sh
+```
+
+CI also builds and smoke-tests the package and uploads it as the `lead-assistant-release-candidate` artifact. The smoke validates the single `lead-assistant/` plugin root, matching version metadata, PHP/JavaScript syntax and the absence of development-only files or potential committed API credentials.
+
 ## Architecture rule
 
 Core -> Conversation Governor -> Business configuration -> Actions -> Presets
@@ -81,4 +100,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.7.0` development cut: lead search, filtering and safe filtered CSV export. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.8.0-rc1`: first installable release candidate. The focus of this cut is packaging and acceptance of the existing product, not new runtime functionality. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
