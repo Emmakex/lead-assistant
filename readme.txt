@@ -4,7 +4,7 @@ Tags: ai chatbot, lead generation, lead capture, sales assistant, chatbot
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,14 +28,26 @@ This repository is currently in development and is not yet a production release.
 
 1. Upload the plugin directory to `/wp-content/plugins/`.
 2. Activate Lead Assistant.
-3. For this development build, define `LEAD_ASSISTANT_OPENAI_API_KEY` in `wp-config.php` or as a server environment variable.
-4. Open Lead Assistant -> Settings in WordPress administration.
-5. Describe the business and the commercial goal.
+3. Open Lead Assistant -> Settings.
+4. Paste an OpenAI API key and click Connect AI.
+5. Describe the business and define the commercial goal.
 6. Configure a WordPress privacy-policy page if the site will capture contact details.
 7. Add `[lead_assistant]` to a page.
 8. Review qualified/captured opportunities under Lead Assistant -> Leads.
 
+Advanced installations may provide `LEAD_ASSISTANT_OPENAI_API_KEY` from `wp-config.php` or the server environment instead. Server configuration takes priority over a WordPress-stored credential.
+
 == Changelog ==
+
+= 0.6.0 =
+* Added simple Connect AI onboarding in WordPress settings.
+* Validates an API key server-side before storage.
+* Confirms availability of the configured model through the provider Models API.
+* Encrypts WordPress-stored API credentials using site-derived security material.
+* Never pre-fills or returns the stored plaintext key to the browser.
+* Preserves wp-config.php/environment credentials as the advanced server-side override.
+* Added disconnect/replace connection controls with administrator capability and nonce checks.
+* Added CI guards preventing credential identifiers from entering public browser code.
 
 = 0.5.0 =
 * Added a WordPress admin Leads screen for qualified and captured conversations.
