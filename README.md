@@ -61,6 +61,14 @@ Contact data is attached to the existing opaque conversation session and is neve
 
 The form links to the WordPress privacy-policy page when one is configured. This technical consent mechanism does not by itself claim legal or regulatory compliance; the site operator remains responsible for its privacy notices and processing basis.
 
+## WordPress lead administration
+
+WordPress administrators can open **Lead Assistant -> Leads** to review commercial opportunities without exposing ordinary unqualified chat sessions in the lead view.
+
+The list includes `qualified` and `captured` sessions, contact details when available, last activity and privacy-consent state. Each lead has a read-only detail page with the complete stored conversation and Governor scopes.
+
+The screen is restricted to users with `manage_options`. It does not yet provide CRM actions, deletion, export or contact-status workflows; those remain outside the 0.5.0 cut.
+
 ## Architecture rule
 
 Core -> Conversation Governor -> Business configuration -> Actions -> Presets
@@ -69,4 +77,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.4.0` development cut: application-owned qualified lead capture. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.5.0` development cut: secure WordPress lead list and conversation detail. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.

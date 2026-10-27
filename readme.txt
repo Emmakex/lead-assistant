@@ -4,7 +4,7 @@ Tags: ai chatbot, lead generation, lead capture, sales assistant, chatbot
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,8 @@ The assistant is governed by a conversation policy designed to keep discussions 
 
 When the conversation is qualified, WordPress can reveal a short contact form. The AI model does not request or receive the visitor's email or phone.
 
+Administrators can review qualified/captured leads and their stored conversation from Lead Assistant -> Leads.
+
 This repository is currently in development and is not yet a production release.
 
 == Installation ==
@@ -27,12 +29,20 @@ This repository is currently in development and is not yet a production release.
 1. Upload the plugin directory to `/wp-content/plugins/`.
 2. Activate Lead Assistant.
 3. For this development build, define `LEAD_ASSISTANT_OPENAI_API_KEY` in `wp-config.php` or as a server environment variable.
-4. Open Lead Assistant in WordPress administration.
+4. Open Lead Assistant -> Settings in WordPress administration.
 5. Describe the business and the commercial goal.
 6. Configure a WordPress privacy-policy page if the site will capture contact details.
 7. Add `[lead_assistant]` to a page.
+8. Review qualified/captured opportunities under Lead Assistant -> Leads.
 
 == Changelog ==
+
+= 0.5.0 =
+* Added a WordPress admin Leads screen for qualified and captured conversations.
+* Added paginated lead listing with contact, activity and consent information.
+* Added read-only lead detail with the complete stored conversation and Governor scopes.
+* Restricted lead administration to users with `manage_options`.
+* Kept unqualified chat sessions out of the Leads view.
 
 = 0.4.0 =
 * Added application-owned contact capture for qualified conversations.

@@ -23,6 +23,15 @@ final class Lead_Assistant_Settings {
             'dashicons-format-chat',
             30
         );
+
+        add_submenu_page(
+            'lead-assistant',
+            __( 'Settings', 'lead-assistant' ),
+            __( 'Settings', 'lead-assistant' ),
+            'manage_options',
+            'lead-assistant',
+            array( __CLASS__, 'render_page' )
+        );
     }
 
     public static function register_settings(): void {
