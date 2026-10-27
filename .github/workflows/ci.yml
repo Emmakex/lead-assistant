@@ -53,13 +53,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Guard against committed secrets and vertical coupling
+      - name: Guard secrets, credential boundaries and vertical coupling
         shell: bash
         run: |
           set -euo pipefail
 
-          if grep -RInE --exclude-dir=.git '(sk-[A-Za-z0-9_-]{20,}|OPENAI_API_KEY[[:space:]]*=)' lead-assistant.php includes public 2>/dev/null; then
+          if grep -RInE --exclude-dir=.git '(sk-[A-Za-z0-9_-]{20,}|OPENAI_API_KEY[[:space:]]*=)' lead-assistant.php includes admin public 2>/dev/null; then
             echo 'Potential API credential committed to executable plugin code.' >&2
+            exit 1
+          fi
+
+          if grep -RInE '(openai_api_key|LEAD_ASSISTANT_OPENAI_API_KEY|lead_assistant_openai_credential)' public 2>/dev/null; then
+            echo 'AI credential identifier leaked into public/browser code.' >&2
+            exit 1
+          fi
+
+          if grep -RIn 'lead_assistant_openai_credential' lead-assistant.php includes admin public --exclude='class-lead-assistant-credential-store.php' 2>/dev/null; then
+            echo 'Encrypted credential option accessed outside the credential store authority.' >&2
             exit 1
           fi
 
