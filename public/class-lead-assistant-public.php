@@ -10,6 +10,8 @@ final class Lead_Assistant_Public {
     }
 
     public static function render_shortcode(): string {
+        $ready = Lead_Assistant_Settings::is_configured() && Lead_Assistant_AI_Provider::is_configured();
+
         wp_enqueue_style(
             'lead-assistant',
             LEAD_ASSISTANT_URL . 'public/css/lead-assistant.css',
@@ -25,17 +27,30 @@ final class Lead_Assistant_Public {
             true
         );
 
+        wp_localize_script(
+            'lead-assistant',
+            'LeadAssistantConfig',
+            array(
+                'endpoint' => esc_url_raw( rest_url( 'lead-assistant/v1/message' ) ),
+                'ready'    => $ready,
+                'strings'  => array(
+                    'error'   => __( 'I could not respond right now. Please try again.', 'lead-assistant' ),
+                    'sending' => __( 'Thinking…', 'lead-assistant' ),
+                ),
+            )
+        );
+
         ob_start();
         ?>
         <section class="lead-assistant" data-lead-assistant>
             <div class="lead-assistant__card">
-                <div class="lead-assistant__messages" aria-live="polite">
+                <div class="lead-assistant__messages" aria-live="polite" aria-busy="false">
                     <div class="lead-assistant__message lead-assistant__message--assistant">
                         <?php
                         echo esc_html(
-                            Lead_Assistant_Settings::is_configured()
+                            $ready
                                 ? __( 'Hello. How can I help you today?', 'lead-assistant' )
-                                : __( 'Lead Assistant needs to be configured by the site administrator.', 'lead-assistant' )
+                                : __( 'The assistant is temporarily unavailable.', 'lead-assistant' )
                         );
                         ?>
                     </div>
@@ -50,9 +65,10 @@ final class Lead_Assistant_Public {
                         type="text"
                         placeholder="<?php echo esc_attr__( 'Write your message…', 'lead-assistant' ); ?>"
                         autocomplete="off"
-                        <?php disabled( ! Lead_Assistant_Settings::is_configured() ); ?>
+                        maxlength="1500"
+                        <?php disabled( ! $ready ); ?>
                     >
-                    <button type="submit" <?php disabled( ! Lead_Assistant_Settings::is_configured() ); ?>>
+                    <button type="submit" <?php disabled( ! $ready ); ?>>
                         <?php echo esc_html__( 'Send', 'lead-assistant' ); ?>
                     </button>
                 </form>

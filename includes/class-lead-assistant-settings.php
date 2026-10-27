@@ -63,10 +63,27 @@ final class Lead_Assistant_Settings {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
+
+        $ai_connected = class_exists( 'Lead_Assistant_AI_Provider' ) && Lead_Assistant_AI_Provider::is_configured();
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__( 'Lead Assistant', 'lead-assistant' ); ?></h1>
-            <p><?php echo esc_html__( 'Describe the business and the commercial goal. Lead Assistant will use these as the source for its conversation policy.', 'lead-assistant' ); ?></p>
+            <p><?php echo esc_html__( 'Describe the business and the commercial goal. Lead Assistant will generate the conversation policy automatically.', 'lead-assistant' ); ?></p>
+
+            <h2><?php echo esc_html__( 'AI connection', 'lead-assistant' ); ?></h2>
+            <p>
+                <strong><?php echo esc_html__( 'Status:', 'lead-assistant' ); ?></strong>
+                <?php echo esc_html( $ai_connected ? __( 'Connected', 'lead-assistant' ) : __( 'Not configured', 'lead-assistant' ) ); ?>
+            </p>
+            <?php if ( ! $ai_connected ) : ?>
+                <p>
+                    <?php
+                    echo wp_kses_post(
+                        __( 'For this development build, define <code>LEAD_ASSISTANT_OPENAI_API_KEY</code> in <code>wp-config.php</code> or as a server environment variable. The key is never stored in this public repository.', 'lead-assistant' )
+                    );
+                    ?>
+                </p>
+            <?php endif; ?>
 
             <form method="post" action="options.php">
                 <?php settings_fields( 'lead_assistant_settings' ); ?>
