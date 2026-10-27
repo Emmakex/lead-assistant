@@ -4,7 +4,7 @@ Tags: ai chatbot, lead generation, lead capture, sales assistant, chatbot
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.7.0
+Stable tag: 0.8.0-rc1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,11 +22,11 @@ When the conversation is qualified, WordPress can reveal a short contact form. T
 
 Administrators can review, search, filter and export qualified/captured leads from Lead Assistant -> Leads.
 
-This repository is currently in development and is not yet a production release.
+This is a release-candidate development build and is not yet the production release.
 
 == Installation ==
 
-1. Upload the plugin directory to `/wp-content/plugins/`.
+1. Upload the `lead-assistant` plugin directory or install the generated ZIP.
 2. Activate Lead Assistant.
 3. Open Lead Assistant -> Settings.
 4. Paste an OpenAI API key and click Connect AI.
@@ -38,6 +38,14 @@ This repository is currently in development and is not yet a production release.
 Advanced installations may provide `LEAD_ASSISTANT_OPENAI_API_KEY` from `wp-config.php` or the server environment instead. Server configuration takes priority over a WordPress-stored credential.
 
 == Changelog ==
+
+= 0.8.0-rc1 =
+* Added deterministic release ZIP packaging from an explicit runtime-file allowlist.
+* Added release smoke validation for a single installable `lead-assistant/` root directory.
+* Added version-consistency checks across plugin header, runtime constant and readme stable tag.
+* Added packaged PHP and JavaScript syntax validation.
+* Added checks preventing development-only files and potential API credentials from entering the installable ZIP.
+* Added a CI release-candidate artifact for clean WordPress installation testing.
 
 = 0.7.0 =
 * Added lead search by name, email or phone.

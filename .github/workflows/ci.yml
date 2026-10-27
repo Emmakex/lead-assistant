@@ -77,3 +77,31 @@ jobs:
             echo 'Vertical-specific SmartFinance/mortgage coupling found in core code.' >&2
             exit 1
           fi
+
+  release-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Build installable ZIP
+        shell: bash
+        run: bash scripts/build-release.sh
+
+      - name: Smoke-test installable ZIP
+        shell: bash
+        run: bash scripts/smoke-release.sh
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-assistant-release-candidate
+          path: build/lead-assistant-*.zip
+          if-no-files-found: error
+          retention-days: 14
