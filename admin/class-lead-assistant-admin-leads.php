@@ -41,8 +41,8 @@ final class Lead_Assistant_Admin_Leads {
     private static function render_list(): void {
         global $wpdb;
 
-        $page       = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
-        $offset     = ( $page - 1 ) * self::PER_PAGE;
+        $page        = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
+        $offset      = ( $page - 1 ) * self::PER_PAGE;
         $leads_table = $wpdb->prefix . 'lead_assistant_leads';
 
         $total = (int) $wpdb->get_var(
@@ -67,6 +67,17 @@ final class Lead_Assistant_Admin_Leads {
         }
 
         $total_pages = max( 1, (int) ceil( $total / self::PER_PAGE ) );
+        $pagination_base = str_replace(
+            '999999999',
+            '%#%',
+            add_query_arg(
+                array(
+                    'page'  => self::PAGE_SLUG,
+                    'paged' => 999999999,
+                ),
+                admin_url( 'admin.php' )
+            )
+        );
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__( 'Leads', 'lead-assistant' ); ?></h1>
@@ -129,13 +140,7 @@ final class Lead_Assistant_Admin_Leads {
                         echo wp_kses_post(
                             paginate_links(
                                 array(
-                                    'base'      => add_query_arg(
-                                        array(
-                                            'page'  => self::PAGE_SLUG,
-                                            'paged' => '%#%',
-                                        ),
-                                        admin_url( 'admin.php' )
-                                    ),
+                                    'base'      => $pagination_base,
                                     'format'    => '',
                                     'current'   => $page,
                                     'total'     => $total_pages,
