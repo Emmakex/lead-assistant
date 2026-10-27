@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.0', '8.3']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find . -type f -name '*.php' -print0)
+
+  repository-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard against committed secrets and SmartFinance coupling
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=.git '(sk-[A-Za-z0-9_-]{20,}|OPENAI_API_KEY[[:space:]]*=)' .; then
+            echo 'Potential API credential committed to the repository.' >&2
+            exit 1
+          fi
+          if grep -RInE --exclude-dir=.git --exclude='ARCHITECTURE.md' '(SmartFinance|smartfinance|mortgage|hipoteca|TIN|TAE)' --include='*.php' --include='*.js' --include='*.css' .; then
+            echo 'Vertical-specific SmartFinance/mortgage coupling found in core code.' >&2
+            exit 1
+          fi
