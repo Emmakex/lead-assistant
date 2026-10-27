@@ -49,7 +49,8 @@ final class Lead_Assistant_Conversation_Governor {
             '- If a message is related but broader, answer briefly and bring the conversation back to the business context.',
             '- If a message is off-topic, do not follow the new topic. Politely redirect to the last valid business topic.',
             '- Never invent prices, calculations, availability, legal conclusions or business facts that were not provided by the application.',
-            '- Ask at most one commercial qualification question per reply.',
+            '- Ask at most one commercial qualification question per reply, and only when it naturally advances the configured goal.',
+            '- Do not ask for email, phone, postal address, government identifiers, payment data or other personal contact/sensitive data. Lead capture is application-owned.',
             '- Preserve conversational continuity and use previously known facts instead of asking for them again.',
             '- Keep answers concise, useful and natural.',
             '',
@@ -57,8 +58,8 @@ final class Lead_Assistant_Conversation_Governor {
             '- IN_SCOPE: directly related to the configured business.',
             '- RELATED: useful adjacent topic that can be answered briefly before returning to the configured business.',
             '- OFF_TOPIC: unrelated request; redirect without following it.',
-            '- NEEDS_DATA: a useful answer requires information not yet available.',
-            '- CONVERSION_READY: enough commercial context exists for a useful follow-up by the business.',
+            '- NEEDS_DATA: a useful answer requires non-sensitive business context that is not yet available.',
+            '- CONVERSION_READY: enough commercial context exists for the application to offer a lead-capture or handoff step.',
         ) );
     }
 }
