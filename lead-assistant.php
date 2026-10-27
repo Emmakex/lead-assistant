@@ -3,7 +3,7 @@
  * Plugin Name: Lead Assistant
  * Plugin URI: https://github.com/Emmakex/lead-assistant
  * Description: Focused AI chatbot and lead generation assistant for WordPress.
- * Version: 0.7.0
+ * Version: 0.8.0-rc1
  * Author: Financial Rocks
  * License: GPL-2.0-or-later
  * Text Domain: lead-assistant
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'LEAD_ASSISTANT_VERSION', '0.7.0' );
+define( 'LEAD_ASSISTANT_VERSION', '0.8.0-rc1' );
 define( 'LEAD_ASSISTANT_FILE', __FILE__ );
 define( 'LEAD_ASSISTANT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LEAD_ASSISTANT_URL', plugin_dir_url( __FILE__ ) );
