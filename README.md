@@ -34,15 +34,17 @@ No API credential is sent to the browser or committed to the repository. A simpl
 
 ## Conversation runtime
 
-The current runtime uses the OpenAI Responses API with Structured Outputs. Every model turn returns an application-controlled structure:
+The runtime uses the OpenAI Responses API with Structured Outputs. Every model turn returns an application-controlled structure:
 
 - `scope`
 - `reply`
 - `follow_up_question`
 
-Off-topic turns remain visible to the visitor but are not retained in subsequent model context. This allows the assistant to redirect without losing the last valid business thread.
+WordPress owns conversation state. The browser stores only an opaque random session token; the database stores only its SHA-256 hash. The client no longer supplies conversation history to the AI runtime.
 
-Public requests are length-bounded, history-bounded, origin-checked when a browser origin is present, and rate-limited before the AI provider is called.
+Valid prior turns are loaded server-side from WordPress. `OFF_TOPIC` exchanges remain stored for audit/history but are excluded from future model context, preserving the last valid business thread.
+
+Public requests are length-bounded, origin-checked when a browser origin is present, and rate-limited before the AI provider is called.
 
 ## Architecture rule
 
@@ -52,4 +54,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.2.0` development cut: governed Responses API runtime in progress. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.3.0` development cut: server-owned conversation state. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
