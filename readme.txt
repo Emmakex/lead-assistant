@@ -4,7 +4,7 @@ Tags: ai chatbot, lead generation, lead capture, sales assistant, chatbot
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ The assistant is governed by a conversation policy designed to keep discussions 
 
 When the conversation is qualified, WordPress can reveal a short contact form. The AI model does not request or receive the visitor's email or phone.
 
-Administrators can review qualified/captured leads and their stored conversation from Lead Assistant -> Leads.
+Administrators can review, search, filter and export qualified/captured leads from Lead Assistant -> Leads.
 
 This repository is currently in development and is not yet a production release.
 
@@ -38,6 +38,15 @@ This repository is currently in development and is not yet a production release.
 Advanced installations may provide `LEAD_ASSISTANT_OPENAI_API_KEY` from `wp-config.php` or the server environment instead. Server configuration takes priority over a WordPress-stored credential.
 
 == Changelog ==
+
+= 0.7.0 =
+* Added lead search by name, email or phone.
+* Added qualified/captured status filtering.
+* Added activity-date filtering using the WordPress site timezone.
+* Added filtered UTF-8 CSV export.
+* Added administrator capability and nonce protection to CSV export.
+* Added spreadsheet-formula injection neutralization for exported visitor data.
+* Preserved the read-only admin boundary; no CRM mutations were introduced.
 
 = 0.6.0 =
 * Added simple Connect AI onboarding in WordPress settings.
