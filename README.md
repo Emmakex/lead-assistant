@@ -40,11 +40,26 @@ The runtime uses the OpenAI Responses API with Structured Outputs. Every model t
 - `reply`
 - `follow_up_question`
 
-WordPress owns conversation state. The browser stores only an opaque random session token; the database stores only its SHA-256 hash. The client no longer supplies conversation history to the AI runtime.
+WordPress owns conversation state. The browser stores only an opaque random session token; the database stores only its SHA-256 hash. The client never supplies conversation history to the AI runtime.
 
 Valid prior turns are loaded server-side from WordPress. `OFF_TOPIC` exchanges remain stored for audit/history but are excluded from future model context, preserving the last valid business thread.
 
 Public requests are length-bounded, origin-checked when a browser origin is present, and rate-limited before the AI provider is called.
+
+## Qualified lead capture
+
+The language model does not request or receive contact details. When the Governor classifies a conversation as `CONVERSION_READY`, the application may reveal a short contact form managed entirely by WordPress.
+
+The current default form collects:
+
+- name;
+- email;
+- phone;
+- explicit privacy consent.
+
+Contact data is attached to the existing opaque conversation session and is never included in the conversation context sent to the AI provider. Lead status progresses monotonically from `conversation` to `qualified` to `captured`.
+
+The form links to the WordPress privacy-policy page when one is configured. This technical consent mechanism does not by itself claim legal or regulatory compliance; the site operator remains responsible for its privacy notices and processing basis.
 
 ## Architecture rule
 
@@ -54,4 +69,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.3.0` development cut: server-owned conversation state. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.4.0` development cut: application-owned qualified lead capture. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
