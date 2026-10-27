@@ -190,9 +190,20 @@ final class Lead_Assistant_Conversation_Store {
             return false;
         }
 
-        $status = $scope === Lead_Assistant_Conversation_Governor::CONVERSION_READY
-            ? 'qualified'
-            : 'conversation';
+        $current_status = (string) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT status FROM {$leads_table} WHERE id = %d LIMIT 1",
+                $lead_id
+            )
+        );
+
+        if ( $current_status === 'captured' ) {
+            $status = 'captured';
+        } elseif ( $current_status === 'qualified' || $scope === Lead_Assistant_Conversation_Governor::CONVERSION_READY ) {
+            $status = 'qualified';
+        } else {
+            $status = 'conversation';
+        }
 
         $wpdb->update(
             $leads_table,
@@ -210,6 +221,99 @@ final class Lead_Assistant_Conversation_Store {
             array( '%s', '%s', '%s' ),
             array( '%d' )
         );
+
+        return true;
+    }
+
+    public static function needs_contact_capture( int $lead_id, string $scope ): bool {
+        if ( $scope !== Lead_Assistant_Conversation_Governor::CONVERSION_READY ) {
+            return false;
+        }
+
+        return ! self::is_contact_captured( $lead_id );
+    }
+
+    public static function is_contact_captured( int $lead_id ): bool {
+        global $wpdb;
+
+        if ( $lead_id < 1 ) {
+            return false;
+        }
+
+        $table = $wpdb->prefix . 'lead_assistant_leads';
+        $row   = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT status, consent_privacy FROM {$table} WHERE id = %d LIMIT 1",
+                $lead_id
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $row ) ) {
+            return false;
+        }
+
+        return (string) ( $row['status'] ?? '' ) === 'captured'
+            && (int) ( $row['consent_privacy'] ?? 0 ) === 1;
+    }
+
+    /**
+     * Persist contact data only after the application has qualified the conversation.
+     *
+     * @return true|WP_Error
+     */
+    public static function capture_contact( int $lead_id, string $name, string $email, string $phone, bool $privacy_consent ) {
+        global $wpdb;
+
+        if ( $lead_id < 1 ) {
+            return new WP_Error( 'lead_assistant_invalid_session', __( 'This conversation session is no longer valid.', 'lead-assistant' ) );
+        }
+
+        $table = $wpdb->prefix . 'lead_assistant_leads';
+        $row   = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT status, consent_privacy FROM {$table} WHERE id = %d LIMIT 1",
+                $lead_id
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $row ) ) {
+            return new WP_Error( 'lead_assistant_invalid_session', __( 'This conversation session is no longer valid.', 'lead-assistant' ) );
+        }
+
+        if ( (string) ( $row['status'] ?? '' ) === 'captured' && (int) ( $row['consent_privacy'] ?? 0 ) === 1 ) {
+            return true;
+        }
+
+        if ( (string) ( $row['status'] ?? '' ) !== 'qualified' ) {
+            return new WP_Error( 'lead_assistant_not_qualified', __( 'This conversation is not ready for contact capture yet.', 'lead-assistant' ) );
+        }
+
+        if ( ! $privacy_consent ) {
+            return new WP_Error( 'lead_assistant_privacy_required', __( 'Privacy consent is required.', 'lead-assistant' ) );
+        }
+
+        $now     = current_time( 'mysql', true );
+        $updated = $wpdb->update(
+            $table,
+            array(
+                'updated_at'      => $now,
+                'status'          => 'captured',
+                'name'            => $name,
+                'email'           => $email,
+                'phone'           => $phone,
+                'consent_privacy' => 1,
+                'consent_at'      => $now,
+            ),
+            array( 'id' => $lead_id ),
+            array( '%s', '%s', '%s', '%s', '%s', '%d', '%s' ),
+            array( '%d' )
+        );
+
+        if ( $updated === false ) {
+            return new WP_Error( 'lead_assistant_capture_failed', __( 'Could not save the contact details.', 'lead-assistant' ) );
+        }
 
         return true;
     }
