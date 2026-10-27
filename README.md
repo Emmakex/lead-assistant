@@ -19,18 +19,20 @@ Lead Assistant is not a general-purpose chatbot. It is a focused conversational 
 
 `[lead_assistant]`
 
-## Development AI connection
+## Simple AI connection
 
-The current development build reads the OpenAI key server-side from either:
+The standard WordPress setup is now intentionally small:
 
-- `LEAD_ASSISTANT_OPENAI_API_KEY` in `wp-config.php`, or
-- the `LEAD_ASSISTANT_OPENAI_API_KEY` server environment variable.
+1. Open **Lead Assistant -> Settings**.
+2. Paste an OpenAI API key and choose **Connect AI**.
+3. Describe the business and define the commercial goal.
+4. Add `[lead_assistant]` to a page.
 
-Optional model override:
+The submitted key is validated server-side before it is stored. Validation uses the OpenAI Models API to confirm authentication and availability of the configured model without generating a conversational response.
 
-- `LEAD_ASSISTANT_OPENAI_MODEL` in `wp-config.php`.
+For the standard WordPress path, the key is encrypted before being stored in the database using a key derived from the site's WordPress security salts. The plaintext key is never displayed again and is never emitted to public JavaScript.
 
-No API credential is sent to the browser or committed to the repository. A simplified secure onboarding UI will replace this development configuration path before the commercial release.
+Advanced installations may still provide `LEAD_ASSISTANT_OPENAI_API_KEY` through `wp-config.php` or the server environment. A server-provided key takes priority over a WordPress-stored credential. `LEAD_ASSISTANT_OPENAI_MODEL` remains available as an advanced server-side model override.
 
 ## Conversation runtime
 
@@ -67,7 +69,7 @@ WordPress administrators can open **Lead Assistant -> Leads** to review commerci
 
 The list includes `qualified` and `captured` sessions, contact details when available, last activity and privacy-consent state. Each lead has a read-only detail page with the complete stored conversation and Governor scopes.
 
-The screen is restricted to users with `manage_options`. It does not yet provide CRM actions, deletion, export or contact-status workflows; those remain outside the 0.5.0 cut.
+The screen is restricted to users with `manage_options`. It does not yet provide CRM actions, deletion, export or contact-status workflows.
 
 ## Architecture rule
 
@@ -77,4 +79,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.5.0` development cut: secure WordPress lead list and conversation detail. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.6.0` development cut: simple server-side AI connection and encrypted WordPress credential storage. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
