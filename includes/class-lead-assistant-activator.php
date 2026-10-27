@@ -5,7 +5,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Lead_Assistant_Activator {
+    private const DB_VERSION = '0.4.0';
+
     public static function activate(): void {
+        self::migrate();
+    }
+
+    public static function maybe_upgrade(): void {
+        $installed = (string) get_option( 'lead_assistant_db_version', '0.0.0' );
+
+        if ( version_compare( $installed, self::DB_VERSION, '<' ) ) {
+            self::migrate();
+        }
+    }
+
+    private static function migrate(): void {
         global $wpdb;
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -23,6 +37,8 @@ final class Lead_Assistant_Activator {
             name VARCHAR(120) NULL,
             email VARCHAR(190) NULL,
             phone VARCHAR(60) NULL,
+            consent_privacy TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+            consent_at DATETIME NULL,
             business_context LONGTEXT NULL,
             lead_context LONGTEXT NULL,
             PRIMARY KEY (id),
@@ -47,6 +63,6 @@ final class Lead_Assistant_Activator {
         dbDelta( $leads_sql );
         dbDelta( $messages_sql );
 
-        add_option( 'lead_assistant_db_version', '0.1.0', '', false );
+        update_option( 'lead_assistant_db_version', self::DB_VERSION, false );
     }
 }
