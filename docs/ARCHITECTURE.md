@@ -63,9 +63,25 @@ The AI provider uses the OpenAI Responses API with Structured Outputs. The appli
 - `reply`: concise answer or redirection without a commercial qualification question.
 - `follow_up_question`: an empty string or one short relevant question.
 
-The application, not the model, decides what context survives between turns. `OFF_TOPIC` exchanges remain visible in the browser but are excluded from subsequent model context, preserving the last valid business thread.
+The application, not the model, decides what context survives between turns. `OFF_TOPIC` exchanges are stored for history/audit but are excluded from subsequent model context, preserving the last valid business thread.
 
 The model receives only bounded conversation content and business configuration. Lead email and phone are not part of the AI runtime contract.
+
+## Conversation state authority
+
+WordPress is the sole authority for conversation history. The browser never supplies prior message history to the model runtime.
+
+On the first successful conversation request, WordPress creates a session/lead row and returns a cryptographically random 64-character token to the browser. The browser keeps this token in `sessionStorage`; the database stores only `SHA-256(token)` in `public_token`.
+
+For subsequent turns:
+
+1. the browser submits the opaque token and current message;
+2. WordPress hashes the token and resolves the internal lead ID;
+3. WordPress loads the latest valid stored context;
+4. the provider receives that server-owned context plus the new user message;
+5. the resulting user/assistant turn is persisted with its Governor scope.
+
+Sequential database IDs are never exposed as public authorization.
 
 ## Data model
 
@@ -74,7 +90,7 @@ The foundation uses two tables:
 - `wp_lead_assistant_leads`: lead/session-level state.
 - `wp_lead_assistant_messages`: ordered conversation items.
 
-Public updates must use an unguessable token or equivalent server-controlled session credential. Sequential database IDs must never be treated as public authorization.
+The `public_token` column stores only the hash of the browser-visible session token. `business_context` snapshots the configured business/goal at session creation; `lead_context` stores application-owned conversation state such as the latest Governor scope.
 
 ## AI integration direction
 
@@ -90,7 +106,8 @@ The public AI endpoint is intentionally unauthenticated because site visitors ar
 - same-site browser-origin validation when an Origin header is present;
 - per-IP hashed rate limiting without storing the raw IP;
 - message-length limits;
-- bounded conversation history;
+- server-owned bounded conversation history;
+- opaque session-token resolution;
 - server-side sanitization.
 
 Additional anti-abuse controls may be added before public release, but none may rely on a sequential lead ID as authorization.
@@ -102,6 +119,8 @@ Additional anti-abuse controls may be added before public release, but none may 
 - Keep API credentials server-side.
 - Rate-limit public AI endpoints.
 - Bound message length and retained history.
+- Keep prior conversation context server-owned.
+- Store only hashed public session tokens in the database.
 - Do not send email or phone to the AI provider unless a future feature explicitly requires it.
 - Consent and privacy handling must be explicit before production lead capture.
 - Public runtime errors must not expose provider response bodies or credentials.

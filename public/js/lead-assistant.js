@@ -1,8 +1,7 @@
 (function () {
     'use strict';
 
-    var contextHistory = [];
-    var MAX_HISTORY_ITEMS = 10;
+    var SESSION_KEY = 'lead_assistant_session_token_v1';
 
     document.addEventListener('submit', function (event) {
         var form = event.target.closest('[data-lead-assistant-form]');
@@ -35,13 +34,15 @@
             },
             body: JSON.stringify({
                 message: value,
-                history: contextHistory
+                session_token: getSessionToken()
             })
         })
             .then(function (response) {
                 return response.json().then(function (data) {
                     if (!response.ok) {
-                        throw new Error(data && data.message ? data.message : 'request_failed');
+                        var error = new Error(data && data.message ? data.message : 'request_failed');
+                        error.code = data && data.code ? data.code : '';
+                        throw error;
                     }
                     return data;
                 });
@@ -49,8 +50,11 @@
             .then(function (data) {
                 var reply = typeof data.reply === 'string' ? data.reply.trim() : '';
                 var question = typeof data.follow_up_question === 'string' ? data.follow_up_question.trim() : '';
-                var scope = typeof data.scope === 'string' ? data.scope : '';
                 var visibleReply = reply;
+
+                if (typeof data.session_token === 'string' && /^[a-f0-9]{64}$/.test(data.session_token)) {
+                    setSessionToken(data.session_token);
+                }
 
                 if (question !== '') {
                     visibleReply += (visibleReply !== '' ? '\n\n' : '') + question;
@@ -61,15 +65,12 @@
                 }
 
                 appendMessage(messages, visibleReply, 'assistant');
-
-                // Off-topic turns remain visible to the visitor but are deliberately
-                // excluded from future model context so the conversation keeps its focus.
-                if (scope !== 'OFF_TOPIC') {
-                    pushContext('user', value);
-                    pushContext('assistant', visibleReply);
-                }
             })
-            .catch(function () {
+            .catch(function (error) {
+                if (error && error.code === 'lead_assistant_invalid_session') {
+                    clearSessionToken();
+                }
+
                 var strings = config.strings || {};
                 appendMessage(
                     messages,
@@ -83,14 +84,27 @@
             });
     });
 
-    function pushContext(role, content) {
-        contextHistory.push({
-            role: role,
-            content: content
-        });
+    function getSessionToken() {
+        try {
+            return window.sessionStorage.getItem(SESSION_KEY) || '';
+        } catch (error) {
+            return '';
+        }
+    }
 
-        if (contextHistory.length > MAX_HISTORY_ITEMS) {
-            contextHistory = contextHistory.slice(-MAX_HISTORY_ITEMS);
+    function setSessionToken(token) {
+        try {
+            window.sessionStorage.setItem(SESSION_KEY, token);
+        } catch (error) {
+            // The conversation still works for the current request if storage is unavailable.
+        }
+    }
+
+    function clearSessionToken() {
+        try {
+            window.sessionStorage.removeItem(SESSION_KEY);
+        } catch (error) {
+            // No action required.
         }
     }
 
