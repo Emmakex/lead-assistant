@@ -25,10 +25,10 @@ final class Lead_Assistant_REST_API {
                         'required' => true,
                         'type'     => 'string',
                     ),
-                    'history' => array(
+                    'session_token' => array(
                         'required' => false,
-                        'type'     => 'array',
-                        'default'  => array(),
+                        'type'     => 'string',
+                        'default'  => '',
                     ),
                 ),
             )
@@ -63,7 +63,34 @@ final class Lead_Assistant_REST_API {
             );
         }
 
-        $history = self::sanitize_history( $request->get_param( 'history' ) );
+        $session_token = strtolower( trim( (string) $request->get_param( 'session_token' ) ) );
+        $lead_id       = 0;
+        $new_token     = '';
+
+        if ( $session_token !== '' ) {
+            $lead_id = Lead_Assistant_Conversation_Store::resolve_lead_id( $session_token );
+            if ( $lead_id < 1 ) {
+                return new WP_Error(
+                    'lead_assistant_invalid_session',
+                    __( 'This conversation session is no longer valid.', 'lead-assistant' ),
+                    array( 'status' => 400 )
+                );
+            }
+        } else {
+            $session = Lead_Assistant_Conversation_Store::create_session();
+            if ( is_wp_error( $session ) ) {
+                return new WP_Error(
+                    'lead_assistant_session_failed',
+                    __( 'The assistant is temporarily unavailable.', 'lead-assistant' ),
+                    array( 'status' => 500 )
+                );
+            }
+
+            $lead_id   = (int) $session['lead_id'];
+            $new_token = (string) $session['token'];
+        }
+
+        $history = Lead_Assistant_Conversation_Store::load_context( $lead_id, 10 );
         $result  = Lead_Assistant_AI_Provider::respond( $history, $message );
 
         if ( is_wp_error( $result ) ) {
@@ -72,6 +99,18 @@ final class Lead_Assistant_REST_API {
                 __( 'The assistant is temporarily unavailable.', 'lead-assistant' ),
                 array( 'status' => 502 )
             );
+        }
+
+        if ( ! Lead_Assistant_Conversation_Store::append_turn( $lead_id, $message, $result ) ) {
+            return new WP_Error(
+                'lead_assistant_persistence_error',
+                __( 'The assistant is temporarily unavailable.', 'lead-assistant' ),
+                array( 'status' => 500 )
+            );
+        }
+
+        if ( $new_token !== '' ) {
+            $result['session_token'] = $new_token;
         }
 
         return rest_ensure_response( $result );
@@ -136,39 +175,6 @@ final class Lead_Assistant_REST_API {
         $state['count'] = $count + 1;
         set_transient( $key, $state, $window );
         return true;
-    }
-
-    /**
-     * @return array<int,array{role:string,content:string}>
-     */
-    private static function sanitize_history( $history ): array {
-        if ( ! is_array( $history ) ) {
-            return array();
-        }
-
-        $clean = array();
-        foreach ( array_slice( $history, -10 ) as $item ) {
-            if ( ! is_array( $item ) ) {
-                continue;
-            }
-
-            $role = isset( $item['role'] ) ? sanitize_key( (string) $item['role'] ) : '';
-            if ( ! in_array( $role, array( 'user', 'assistant' ), true ) ) {
-                continue;
-            }
-
-            $content = self::clean_text( (string) ( $item['content'] ?? '' ), 1500 );
-            if ( $content === '' ) {
-                continue;
-            }
-
-            $clean[] = array(
-                'role'    => $role,
-                'content' => $content,
-            );
-        }
-
-        return $clean;
     }
 
     private static function clean_text( string $value, int $max_length ): string {
