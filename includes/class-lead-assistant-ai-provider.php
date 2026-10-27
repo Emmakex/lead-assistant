@@ -5,11 +5,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Lead_Assistant_AI_Provider {
-    private const ENDPOINT      = 'https://api.openai.com/v1/responses';
-    private const DEFAULT_MODEL = 'gpt-6.1-terra';
+    private const ENDPOINT        = 'https://api.openai.com/v1/responses';
+    private const MODELS_ENDPOINT = 'https://api.openai.com/v1/models';
+    private const DEFAULT_MODEL   = 'gpt-6.1-terra';
 
     public static function is_configured(): bool {
-        return self::api_key() !== '';
+        return Lead_Assistant_Credential_Store::api_key() !== '';
+    }
+
+    public static function connection_source(): string {
+        return Lead_Assistant_Credential_Store::source();
     }
 
     public static function model(): string {
@@ -26,13 +31,90 @@ final class Lead_Assistant_AI_Provider {
     }
 
     /**
+     * Validate authentication and confirm the configured model is available to the key.
+     * This uses the Models API and does not generate model output.
+     *
+     * @return true|WP_Error
+     */
+    public static function validate_api_key( string $api_key ) {
+        $api_key = trim( $api_key );
+
+        if ( $api_key === '' || strlen( $api_key ) > 512 || preg_match( '/\s/', $api_key ) ) {
+            return new WP_Error(
+                'lead_assistant_ai_key_invalid_format',
+                __( 'The API key format is invalid.', 'lead-assistant' )
+            );
+        }
+
+        $response = wp_remote_get(
+            self::MODELS_ENDPOINT,
+            array(
+                'timeout' => 15,
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $api_key,
+                ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            self::log_error( 'credential_validation_transport', $response->get_error_code() );
+            return new WP_Error(
+                'lead_assistant_ai_key_network_error',
+                __( 'Could not reach the AI provider to validate the key.', 'lead-assistant' )
+            );
+        }
+
+        $status = (int) wp_remote_retrieve_response_code( $response );
+        if ( $status === 401 || $status === 403 ) {
+            self::log_error( 'credential_validation_auth', (string) $status );
+            return new WP_Error(
+                'lead_assistant_ai_key_auth_error',
+                __( 'The API key could not be authenticated.', 'lead-assistant' )
+            );
+        }
+
+        if ( $status < 200 || $status >= 300 ) {
+            self::log_error( 'credential_validation_http', (string) $status );
+            return new WP_Error(
+                'lead_assistant_ai_key_service_error',
+                __( 'The AI provider could not validate the key right now.', 'lead-assistant' )
+            );
+        }
+
+        $data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+        if ( ! is_array( $data ) || ! isset( $data['data'] ) || ! is_array( $data['data'] ) ) {
+            self::log_error( 'credential_validation_invalid_response', (string) $status );
+            return new WP_Error(
+                'lead_assistant_ai_key_service_error',
+                __( 'The AI provider returned an unexpected validation response.', 'lead-assistant' )
+            );
+        }
+
+        $configured_model = self::model();
+        foreach ( $data['data'] as $model ) {
+            if ( is_array( $model ) && isset( $model['id'] ) && (string) $model['id'] === $configured_model ) {
+                return true;
+            }
+        }
+
+        return new WP_Error(
+            'lead_assistant_ai_model_unavailable',
+            sprintf(
+                /* translators: %s: configured model identifier. */
+                __( 'The API key is valid, but the configured model (%s) is not available to this account.', 'lead-assistant' ),
+                $configured_model
+            )
+        );
+    }
+
+    /**
      * Generate one governed assistant turn.
      *
      * @param array<int,array{role:string,content:string}> $history Prior valid conversation turns.
      * @return array{scope:string,reply:string,follow_up_question:string}|WP_Error
      */
     public static function respond( array $history, string $message ) {
-        $api_key = self::api_key();
+        $api_key = Lead_Assistant_Credential_Store::api_key();
 
         if ( $api_key === '' ) {
             return new WP_Error(
@@ -156,7 +238,7 @@ final class Lead_Assistant_AI_Provider {
             );
         }
 
-        $reply = self::clean_text( (string) ( $result['reply'] ?? '' ), 5000 );
+        $reply    = self::clean_text( (string) ( $result['reply'] ?? '' ), 5000 );
         $question = self::clean_text( (string) ( $result['follow_up_question'] ?? '' ), 500 );
 
         if ( $reply === '' ) {
@@ -175,15 +257,6 @@ final class Lead_Assistant_AI_Provider {
             'reply'              => $reply,
             'follow_up_question' => $question,
         );
-    }
-
-    private static function api_key(): string {
-        if ( defined( 'LEAD_ASSISTANT_OPENAI_API_KEY' ) ) {
-            return trim( (string) LEAD_ASSISTANT_OPENAI_API_KEY );
-        }
-
-        $environment_key = getenv( 'LEAD_ASSISTANT_OPENAI_API_KEY' );
-        return is_string( $environment_key ) ? trim( $environment_key ) : '';
     }
 
     /**
