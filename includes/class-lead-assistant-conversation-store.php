@@ -138,8 +138,8 @@ final class Lead_Assistant_Conversation_Store {
             ? (string) $assistant_result['scope']
             : Lead_Assistant_Conversation_Governor::IN_SCOPE;
 
-        $reply = trim( (string) ( $assistant_result['reply'] ?? '' ) );
-        $question = trim( (string) ( $assistant_result['follow_up_question'] ?? '' ) );
+        $reply             = trim( (string) ( $assistant_result['reply'] ?? '' ) );
+        $question          = trim( (string) ( $assistant_result['follow_up_question'] ?? '' ) );
         $assistant_message = $reply;
 
         if ( $question !== '' ) {
@@ -163,7 +163,12 @@ final class Lead_Assistant_Conversation_Store {
             array( '%d', '%s', '%s', '%s', '%s', '%s' )
         );
 
-        $assistant_ok = $wpdb->insert(
+        if ( $user_ok === false ) {
+            return false;
+        }
+
+        $user_message_id = (int) $wpdb->insert_id;
+        $assistant_ok    = $wpdb->insert(
             $messages_table,
             array(
                 'lead_id'    => $lead_id,
@@ -176,7 +181,12 @@ final class Lead_Assistant_Conversation_Store {
             array( '%d', '%s', '%s', '%s', '%s', '%s' )
         );
 
-        if ( $user_ok === false || $assistant_ok === false ) {
+        if ( $assistant_ok === false ) {
+            $wpdb->delete(
+                $messages_table,
+                array( 'id' => $user_message_id ),
+                array( '%d' )
+            );
             return false;
         }
 
@@ -187,8 +197,8 @@ final class Lead_Assistant_Conversation_Store {
         $wpdb->update(
             $leads_table,
             array(
-                'updated_at' => $now,
-                'status'     => $status,
+                'updated_at'   => $now,
+                'status'       => $status,
                 'lead_context' => wp_json_encode(
                     array(
                         'last_scope' => $scope,
