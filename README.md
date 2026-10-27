@@ -21,7 +21,7 @@ Lead Assistant is not a general-purpose chatbot. It is a focused conversational 
 
 ## Simple AI connection
 
-The standard WordPress setup is now intentionally small:
+The standard WordPress setup is intentionally small:
 
 1. Open **Lead Assistant -> Settings**.
 2. Paste an OpenAI API key and choose **Connect AI**.
@@ -69,7 +69,9 @@ WordPress administrators can open **Lead Assistant -> Leads** to review commerci
 
 The list includes `qualified` and `captured` sessions, contact details when available, last activity and privacy-consent state. Each lead has a read-only detail page with the complete stored conversation and Governor scopes.
 
-The screen is restricted to users with `manage_options`. It does not yet provide CRM actions, deletion, export or contact-status workflows.
+Leads can be searched by name, email or phone and filtered by status and WordPress-local activity date. The same filtered result can be exported as a UTF-8 CSV. CSV cells beginning with spreadsheet formula characters are neutralized before export.
+
+The screen is restricted to users with `manage_options`. It still does not provide CRM actions, deletion or contact-status workflows.
 
 ## Architecture rule
 
@@ -79,4 +81,4 @@ The core must never contain mortgage-, real-estate-, insurance-, or other vertic
 
 ## Status
 
-Version `0.6.0` development cut: simple server-side AI connection and encrypted WordPress credential storage. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
+Version `0.7.0` development cut: lead search, filtering and safe filtered CSV export. SmartFinance remains a reference implementation only; its vertical mortgage logic is not copied into the core.
