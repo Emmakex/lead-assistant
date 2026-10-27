@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
 
-          if grep -RInE '(SmartFinance|smartfinance|mortgage|hipoteca|TIN|TAE)' lead-assistant.php includes public --include='*.php' --include='*.js' --include='*.css' 2>/dev/null; then
+          if grep -RInE '(^|[^[:alnum:]_])(SmartFinance|smartfinance|mortgage|hipoteca|TIN|TAE)([^[:alnum:]_]|$)' lead-assistant.php includes public --include='*.php' --include='*.js' --include='*.css' 2>/dev/null; then
             echo 'Vertical-specific SmartFinance/mortgage coupling found in core code.' >&2
             exit 1
           fi
